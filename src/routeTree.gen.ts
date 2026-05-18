@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminFleetRouteImport } from './routes/admin/fleet'
+import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
 
 const RoleSelectRoute = RoleSelectRouteImport.update({
   id: '/role-select',
@@ -46,12 +47,18 @@ const AdminFleetRoute = AdminFleetRouteImport.update({
   path: '/admin/fleet',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
+  id: '/admin/analytics',
+  path: '/admin/analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/role-select': typeof RoleSelectRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/fleet': typeof AdminFleetRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -60,6 +67,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/role-select': typeof RoleSelectRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/fleet': typeof AdminFleetRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -69,6 +77,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/role-select': typeof RoleSelectRoute
+  '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/fleet': typeof AdminFleetRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -79,16 +88,25 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/role-select'
+    | '/admin/analytics'
     | '/admin/fleet'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/role-select' | '/admin/fleet' | '/admin'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/role-select'
+    | '/admin/analytics'
+    | '/admin/fleet'
+    | '/admin'
   id:
     | '__root__'
     | '/'
     | '/login'
     | '/register'
     | '/role-select'
+    | '/admin/analytics'
     | '/admin/fleet'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -98,6 +116,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   RoleSelectRoute: typeof RoleSelectRoute
+  AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminFleetRoute: typeof AdminFleetRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -146,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminFleetRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/analytics': {
+      id: '/admin/analytics'
+      path: '/admin/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AdminAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -154,6 +180,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   RoleSelectRoute: RoleSelectRoute,
+  AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminFleetRoute: AdminFleetRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
