@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DriverIndexRouteImport } from './routes/driver/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as DriverHistoryRouteImport } from './routes/driver/history'
+import { Route as DeliveriesIdRouteImport } from './routes/deliveries.$id'
 import { Route as CustomerOrdersRouteImport } from './routes/customer/orders'
 import { Route as CustomerNewRouteImport } from './routes/customer/new'
 import { Route as AdminFleetRouteImport } from './routes/admin/fleet'
@@ -57,6 +58,11 @@ const DriverHistoryRoute = DriverHistoryRouteImport.update({
   path: '/driver/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeliveriesIdRoute = DeliveriesIdRouteImport.update({
+  id: '/deliveries/$id',
+  path: '/deliveries/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CustomerOrdersRoute = CustomerOrdersRouteImport.update({
   id: '/customer/orders',
   path: '/customer/orders',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/admin/fleet': typeof AdminFleetRoute
   '/customer/new': typeof CustomerNewRoute
   '/customer/orders': typeof CustomerOrdersRoute
+  '/deliveries/$id': typeof DeliveriesIdRoute
   '/driver/history': typeof DriverHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/driver/': typeof DriverIndexRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/admin/fleet': typeof AdminFleetRoute
   '/customer/new': typeof CustomerNewRoute
   '/customer/orders': typeof CustomerOrdersRoute
+  '/deliveries/$id': typeof DeliveriesIdRoute
   '/driver/history': typeof DriverHistoryRoute
   '/admin': typeof AdminIndexRoute
   '/driver': typeof DriverIndexRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/admin/fleet': typeof AdminFleetRoute
   '/customer/new': typeof CustomerNewRoute
   '/customer/orders': typeof CustomerOrdersRoute
+  '/deliveries/$id': typeof DeliveriesIdRoute
   '/driver/history': typeof DriverHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/driver/': typeof DriverIndexRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/admin/fleet'
     | '/customer/new'
     | '/customer/orders'
+    | '/deliveries/$id'
     | '/driver/history'
     | '/admin/'
     | '/driver/'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/admin/fleet'
     | '/customer/new'
     | '/customer/orders'
+    | '/deliveries/$id'
     | '/driver/history'
     | '/admin'
     | '/driver'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/admin/fleet'
     | '/customer/new'
     | '/customer/orders'
+    | '/deliveries/$id'
     | '/driver/history'
     | '/admin/'
     | '/driver/'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   AdminFleetRoute: typeof AdminFleetRoute
   CustomerNewRoute: typeof CustomerNewRoute
   CustomerOrdersRoute: typeof CustomerOrdersRoute
+  DeliveriesIdRoute: typeof DeliveriesIdRoute
   DriverHistoryRoute: typeof DriverHistoryRoute
   AdminIndexRoute: typeof AdminIndexRoute
   DriverIndexRoute: typeof DriverIndexRoute
@@ -237,6 +250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DriverHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/deliveries/$id': {
+      id: '/deliveries/$id'
+      path: '/deliveries/$id'
+      fullPath: '/deliveries/$id'
+      preLoaderRoute: typeof DeliveriesIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/customer/orders': {
       id: '/customer/orders'
       path: '/customer/orders'
@@ -284,6 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminFleetRoute: AdminFleetRoute,
   CustomerNewRoute: CustomerNewRoute,
   CustomerOrdersRoute: CustomerOrdersRoute,
+  DeliveriesIdRoute: DeliveriesIdRoute,
   DriverHistoryRoute: DriverHistoryRoute,
   AdminIndexRoute: AdminIndexRoute,
   DriverIndexRoute: DriverIndexRoute,
