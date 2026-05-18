@@ -14,6 +14,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminFleetRouteImport } from './routes/admin/fleet'
 
 const RoleSelectRoute = RoleSelectRouteImport.update({
   id: '/role-select',
@@ -40,12 +41,18 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminFleetRoute = AdminFleetRouteImport.update({
+  id: '/admin/fleet',
+  path: '/admin/fleet',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/role-select': typeof RoleSelectRoute
+  '/admin/fleet': typeof AdminFleetRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/role-select': typeof RoleSelectRoute
+  '/admin/fleet': typeof AdminFleetRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,28 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/role-select': typeof RoleSelectRoute
+  '/admin/fleet': typeof AdminFleetRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register' | '/role-select' | '/admin/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/role-select'
+    | '/admin/fleet'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register' | '/role-select' | '/admin'
-  id: '__root__' | '/' | '/login' | '/register' | '/role-select' | '/admin/'
+  to: '/' | '/login' | '/register' | '/role-select' | '/admin/fleet' | '/admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/register'
+    | '/role-select'
+    | '/admin/fleet'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +98,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   RoleSelectRoute: typeof RoleSelectRoute
+  AdminFleetRoute: typeof AdminFleetRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -116,6 +139,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/fleet': {
+      id: '/admin/fleet'
+      path: '/admin/fleet'
+      fullPath: '/admin/fleet'
+      preLoaderRoute: typeof AdminFleetRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -124,6 +154,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   RoleSelectRoute: RoleSelectRoute,
+  AdminFleetRoute: AdminFleetRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 export const routeTree = rootRouteImport
