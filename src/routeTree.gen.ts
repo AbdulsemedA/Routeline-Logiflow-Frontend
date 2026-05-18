@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DriverIndexRouteImport } from './routes/driver/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as DriverHistoryRouteImport } from './routes/driver/history'
+import { Route as CustomerOrdersRouteImport } from './routes/customer/orders'
 import { Route as CustomerNewRouteImport } from './routes/customer/new'
 import { Route as AdminFleetRouteImport } from './routes/admin/fleet'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
@@ -56,6 +57,11 @@ const DriverHistoryRoute = DriverHistoryRouteImport.update({
   path: '/driver/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CustomerOrdersRoute = CustomerOrdersRouteImport.update({
+  id: '/customer/orders',
+  path: '/customer/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CustomerNewRoute = CustomerNewRouteImport.update({
   id: '/customer/new',
   path: '/customer/new',
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/fleet': typeof AdminFleetRoute
   '/customer/new': typeof CustomerNewRoute
+  '/customer/orders': typeof CustomerOrdersRoute
   '/driver/history': typeof DriverHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/driver/': typeof DriverIndexRoute
@@ -98,6 +105,7 @@ export interface FileRoutesByTo {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/fleet': typeof AdminFleetRoute
   '/customer/new': typeof CustomerNewRoute
+  '/customer/orders': typeof CustomerOrdersRoute
   '/driver/history': typeof DriverHistoryRoute
   '/admin': typeof AdminIndexRoute
   '/driver': typeof DriverIndexRoute
@@ -112,6 +120,7 @@ export interface FileRoutesById {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/fleet': typeof AdminFleetRoute
   '/customer/new': typeof CustomerNewRoute
+  '/customer/orders': typeof CustomerOrdersRoute
   '/driver/history': typeof DriverHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/driver/': typeof DriverIndexRoute
@@ -127,6 +136,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/fleet'
     | '/customer/new'
+    | '/customer/orders'
     | '/driver/history'
     | '/admin/'
     | '/driver/'
@@ -140,6 +150,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/fleet'
     | '/customer/new'
+    | '/customer/orders'
     | '/driver/history'
     | '/admin'
     | '/driver'
@@ -153,6 +164,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/fleet'
     | '/customer/new'
+    | '/customer/orders'
     | '/driver/history'
     | '/admin/'
     | '/driver/'
@@ -167,6 +179,7 @@ export interface RootRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminFleetRoute: typeof AdminFleetRoute
   CustomerNewRoute: typeof CustomerNewRoute
+  CustomerOrdersRoute: typeof CustomerOrdersRoute
   DriverHistoryRoute: typeof DriverHistoryRoute
   AdminIndexRoute: typeof AdminIndexRoute
   DriverIndexRoute: typeof DriverIndexRoute
@@ -224,6 +237,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DriverHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/customer/orders': {
+      id: '/customer/orders'
+      path: '/customer/orders'
+      fullPath: '/customer/orders'
+      preLoaderRoute: typeof CustomerOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/customer/new': {
       id: '/customer/new'
       path: '/customer/new'
@@ -263,6 +283,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminFleetRoute: AdminFleetRoute,
   CustomerNewRoute: CustomerNewRoute,
+  CustomerOrdersRoute: CustomerOrdersRoute,
   DriverHistoryRoute: DriverHistoryRoute,
   AdminIndexRoute: AdminIndexRoute,
   DriverIndexRoute: DriverIndexRoute,
