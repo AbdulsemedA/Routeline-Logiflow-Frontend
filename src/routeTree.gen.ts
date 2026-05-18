@@ -19,6 +19,7 @@ import { Route as DriverHistoryRouteImport } from './routes/driver/history'
 import { Route as CustomerNewRouteImport } from './routes/customer/new'
 import { Route as AdminFleetRouteImport } from './routes/admin/fleet'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
+import { Route as CustomerTrackingIdRouteImport } from './routes/customer/tracking.$id'
 
 const RoleSelectRoute = RoleSelectRouteImport.update({
   id: '/role-select',
@@ -70,6 +71,11 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   path: '/admin/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CustomerTrackingIdRoute = CustomerTrackingIdRouteImport.update({
+  id: '/customer/tracking/$id',
+  path: '/customer/tracking/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/driver/history': typeof DriverHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/driver/': typeof DriverIndexRoute
+  '/customer/tracking/$id': typeof CustomerTrackingIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/driver/history': typeof DriverHistoryRoute
   '/admin': typeof AdminIndexRoute
   '/driver': typeof DriverIndexRoute
+  '/customer/tracking/$id': typeof CustomerTrackingIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/driver/history': typeof DriverHistoryRoute
   '/admin/': typeof AdminIndexRoute
   '/driver/': typeof DriverIndexRoute
+  '/customer/tracking/$id': typeof CustomerTrackingIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/driver/history'
     | '/admin/'
     | '/driver/'
+    | '/customer/tracking/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/driver/history'
     | '/admin'
     | '/driver'
+    | '/customer/tracking/$id'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/driver/history'
     | '/admin/'
     | '/driver/'
+    | '/customer/tracking/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   DriverHistoryRoute: typeof DriverHistoryRoute
   AdminIndexRoute: typeof AdminIndexRoute
   DriverIndexRoute: typeof DriverIndexRoute
+  CustomerTrackingIdRoute: typeof CustomerTrackingIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/customer/tracking/$id': {
+      id: '/customer/tracking/$id'
+      path: '/customer/tracking/$id'
+      fullPath: '/customer/tracking/$id'
+      preLoaderRoute: typeof CustomerTrackingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,6 +266,7 @@ const rootRouteChildren: RootRouteChildren = {
   DriverHistoryRoute: DriverHistoryRoute,
   AdminIndexRoute: AdminIndexRoute,
   DriverIndexRoute: DriverIndexRoute,
+  CustomerTrackingIdRoute: CustomerTrackingIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
