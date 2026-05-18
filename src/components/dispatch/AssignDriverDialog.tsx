@@ -14,7 +14,7 @@ import { Sparkles, Star, Truck } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { deliveriesApi } from "@/lib/api";
 import { toast } from "sonner";
-import { DriverStatusBadge } from "./StatusBadge";
+import { DriverStatusBadge } from "@/components/dashboard/StatusBadge";
 import { formatDistance } from "@/lib/geo";
 
 interface Props {
