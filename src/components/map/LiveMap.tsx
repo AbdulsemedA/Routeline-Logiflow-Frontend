@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import type * as LeafletNS from "leaflet";
 import type { Delivery, Driver, Location } from "@/types";
 import { useLivePositions } from "@/store/livePositions";
 import { useUIStore } from "@/store/ui";
@@ -8,11 +9,8 @@ interface Props {
   drivers?: Driver[];
   deliveries?: Delivery[];
   focusDelivery?: Delivery | null;
-  /** Show only the focused delivery's route and driver. */
   focusMode?: boolean;
-  /** Allow user to click on the map to drop a pin. */
   onPick?: (loc: Location) => void;
-  /** Markers to render explicitly (e.g. selected pickup/dropoff). */
   pins?: { id: string; location: Location; color?: string; label?: string }[];
   height?: number | string;
   className?: string;
@@ -24,9 +22,21 @@ const TILE_DARK =
   "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 
 export function LiveMap(props: Props) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  if (!mounted) {
+  const [L, setL] = useState<typeof LeafletNS | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const mod = await import("leaflet");
+      await import("leaflet/dist/leaflet.css");
+      if (!cancelled) setL(mod.default ?? (mod as unknown as typeof LeafletNS));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!L) {
     return (
       <div
         className={"rounded-lg bg-muted animate-pulse " + (props.className ?? "")}
@@ -34,10 +44,11 @@ export function LiveMap(props: Props) {
       />
     );
   }
-  return <LeafletMap {...props} />;
+  return <LeafletMap L={L} {...props} />;
 }
 
 function LeafletMap({
+  L,
   drivers = [],
   deliveries = [],
   focusDelivery = null,
@@ -46,23 +57,18 @@ function LeafletMap({
   pins = [],
   height = 480,
   className = "",
-}: Props) {
-  // Dynamic require — only on client
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const L = require("leaflet") as typeof import("leaflet");
-  require("leaflet/dist/leaflet.css");
-
+}: Props & { L: typeof LeafletNS }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const mapRef = useRef<import("leaflet").Map | null>(null);
-  const driverLayerRef = useRef<import("leaflet").LayerGroup | null>(null);
-  const routeLayerRef = useRef<import("leaflet").LayerGroup | null>(null);
-  const pinLayerRef = useRef<import("leaflet").LayerGroup | null>(null);
-  const driverMarkers = useRef(new Map<string, import("leaflet").Marker>());
+  const mapRef = useRef<LeafletNS.Map | null>(null);
+  const driverLayerRef = useRef<LeafletNS.LayerGroup | null>(null);
+  const routeLayerRef = useRef<LeafletNS.LayerGroup | null>(null);
+  const pinLayerRef = useRef<LeafletNS.LayerGroup | null>(null);
+  const tileLayerRef = useRef<LeafletNS.TileLayer | null>(null);
+  const driverMarkers = useRef(new Map<string, LeafletNS.Marker>());
 
   const theme = useUIStore((s) => s.theme);
   const positions = useLivePositions((s) => s.positions);
 
-  // Initialize map
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const map = L.map(containerRef.current, {
@@ -72,16 +78,17 @@ function LeafletMap({
       attributionControl: false,
     });
     mapRef.current = map;
-    L.tileLayer(theme === "dark" ? TILE_DARK : TILE_LIGHT, {
+    tileLayerRef.current = L.tileLayer(theme === "dark" ? TILE_DARK : TILE_LIGHT, {
       maxZoom: 19,
       subdomains: "abcd",
     }).addTo(map);
     driverLayerRef.current = L.layerGroup().addTo(map);
     routeLayerRef.current = L.layerGroup().addTo(map);
     pinLayerRef.current = L.layerGroup().addTo(map);
-
     if (onPick) {
-      map.on("click", (e) => onPick({ lat: e.latlng.lat, lng: e.latlng.lng }));
+      map.on("click", (e: LeafletNS.LeafletMouseEvent) =>
+        onPick({ lat: e.latlng.lat, lng: e.latlng.lng }),
+      );
     }
     return () => {
       map.remove();
@@ -89,24 +96,18 @@ function LeafletMap({
       driverMarkers.current.clear();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [L]);
 
-  // Swap tile layer when theme changes
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
-    map.eachLayer((layer) => {
-      // @ts-expect-error _url is internal but stable
-      if (layer._url) map.removeLayer(layer);
-    });
-    L.tileLayer(theme === "dark" ? TILE_DARK : TILE_LIGHT, {
+    if (!map || !tileLayerRef.current) return;
+    map.removeLayer(tileLayerRef.current);
+    tileLayerRef.current = L.tileLayer(theme === "dark" ? TILE_DARK : TILE_LIGHT, {
       maxZoom: 19,
       subdomains: "abcd",
     }).addTo(map);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [theme]);
+  }, [theme, L]);
 
-  // Render driver markers (with smooth position updates)
   const visibleDrivers = useMemo(() => {
     if (focusMode && focusDelivery?.assignedDriverId) {
       return drivers.filter((d) => d.id === focusDelivery.assignedDriverId);
@@ -139,7 +140,6 @@ function LeafletMap({
         driverMarkers.current.set(drv.id, m);
       }
     }
-    // remove markers no longer visible
     for (const [id, m] of driverMarkers.current.entries()) {
       if (!existingIds.has(id)) {
         layer.removeLayer(m);
@@ -148,7 +148,6 @@ function LeafletMap({
     }
   }, [visibleDrivers, positions, L]);
 
-  // Render routes for active deliveries + pickup/dropoff pins
   useEffect(() => {
     const layer = routeLayerRef.current;
     if (!layer) return;
@@ -187,16 +186,15 @@ function LeafletMap({
         .addTo(layer);
     }
 
-    if (focusMode && focusDelivery) {
+    if (focusMode && focusDelivery && mapRef.current) {
       const bounds = L.latLngBounds([
         [focusDelivery.pickup.lat, focusDelivery.pickup.lng],
         [focusDelivery.dropoff.lat, focusDelivery.dropoff.lng],
       ]);
-      mapRef.current?.fitBounds(bounds, { padding: [60, 60] });
+      mapRef.current.fitBounds(bounds, { padding: [60, 60] });
     }
   }, [deliveries, focusDelivery, focusMode, L]);
 
-  // Custom pins (for customer pickup/dropoff selector)
   useEffect(() => {
     const layer = pinLayerRef.current;
     if (!layer) return;
