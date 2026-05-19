@@ -7,10 +7,11 @@ import { LiveMap } from "@/components/map/LiveMap";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { DeliveryStatusBadge } from "@/components/dashboard/StatusBadge";
+import { DeliveryStatusBadge, DriverStatusBadge } from "@/components/dashboard/StatusBadge";
 import { formatDistance } from "@/lib/geo";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth";
+import type { DeliveryStatus, DriverStatus } from "@/types";
 
 export const Route = createFileRoute("/driver/")({
   component: () => (
@@ -36,10 +37,9 @@ function Inner() {
     refetchInterval: 5000,
   });
 
-  // Pick a demo driver (first active) to represent the logged-in driver
   const me = useMemo(
-    () => drivers.find((d) => d.status === "active" && d.activeDeliveryId) ?? drivers[0],
-    [drivers],
+    () => drivers.find((d) => user?.name && d.name === user.name) ?? drivers[0],
+    [drivers, user],
   );
   const current = useMemo(
     () => deliveries.find((d) => d.id === me?.activeDeliveryId) ?? null,
@@ -53,30 +53,64 @@ function Inner() {
     [deliveries],
   );
 
-  const updateStatus = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: any }) =>
+  const updateDeliveryStatus = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: DeliveryStatus }) =>
       deliveriesApi.updateStatus(id, status),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["deliveries"] });
+      qc.invalidateQueries({ queryKey: ["drivers"] });
+      toast.success("Delivery status updated");
+    },
+    onError: () => {
+      toast.error("Failed to update delivery status");
+    },
+  });
+
+  const updateDriverStatus = useMutation({
+    mutationFn: (status: DriverStatus) => driversApi.updateStatus(status),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["drivers"] });
       toast.success("Status updated");
     },
   });
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">
+          <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
             Good shift, {user?.name?.split(" ")[0] ?? "Driver"}
+            {me && <DriverStatusBadge status={me.status} />}
           </h1>
           <p className="text-sm text-muted-foreground">
             {current ? "Your current delivery is below." : "No active delivery."}
           </p>
         </div>
-        <label className="flex items-center gap-2 text-sm">
-          <Switch checked={liveOn} onCheckedChange={setLiveOn} />
-          Share live location
-        </label>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 rounded-lg border border-border p-0.5">
+            {(["active", "idle", "offline"] as DriverStatus[]).map((s) => (
+              <Button
+                key={s}
+                size="sm"
+                variant={me?.status === s ? "default" : "ghost"}
+                disabled={updateDriverStatus.isPending}
+                onClick={() => updateDriverStatus.mutate(s)}
+                className="h-7 px-3 text-xs capitalize"
+              >
+                {s}
+              </Button>
+            ))}
+          </div>
+          <div className="h-6 w-px bg-border" />
+          <label className="flex items-center gap-2 text-sm">
+            <Switch
+              checked={liveOn}
+              onCheckedChange={setLiveOn}
+              disabled={me?.status === "offline"}
+            />
+            Share live location
+          </label>
+        </div>
       </div>
 
       {current ? (
@@ -106,16 +140,16 @@ function Inner() {
             <div className="grid grid-cols-2 gap-2 pt-2">
               <Button
                 variant="outline"
-                disabled={current.status !== "assigned"}
-                onClick={() => updateStatus.mutate({ id: current.id, status: "picked_up" })}
+                disabled={current.status !== "assigned" || updateDeliveryStatus.isPending}
+                onClick={() => updateDeliveryStatus.mutate({ id: current.id, status: "picked_up" })}
               >
-                Mark picked up
+                {updateDeliveryStatus.isPending ? "Updating…" : "Mark picked up"}
               </Button>
               <Button
-                disabled={current.status === "delivered"}
-                onClick={() => updateStatus.mutate({ id: current.id, status: "delivered" })}
+                disabled={current.status === "delivered" || current.status === "pending" || updateDeliveryStatus.isPending}
+                onClick={() => updateDeliveryStatus.mutate({ id: current.id, status: "delivered" })}
               >
-                Complete delivery
+                {updateDeliveryStatus.isPending ? "Updating…" : "Complete delivery"}
               </Button>
             </div>
           </Card>

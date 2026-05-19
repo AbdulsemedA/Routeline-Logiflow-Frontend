@@ -1,11 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuthStore } from "@/store/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { LayoutDashboard, Package, Truck } from "lucide-react";
 import type { Role } from "@/types";
 import { useThemeEffect } from "@/hooks/useThemeEffect";
+import http from "@/lib/http";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/role-select")({
   component: RoleSelectPage,
@@ -41,22 +43,30 @@ function RoleSelectPage() {
   const setRole = useAuthStore((s) => s.setRole);
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
+  const [picking, setPicking] = useState<Role | null>(null);
 
   useEffect(() => {
     if (!user) {
-      // create a guest user so role-select still works in demo
       login({
         id: "usr_self",
         name: "Demo User",
         email: "demo@routeline.app",
         role: "admin",
-      });
+      }, "", "");
     }
   }, [user, login]);
 
-  function pick(role: Role, to: string) {
-    setRole(role);
-    navigate({ to });
+  async function pick(role: Role, to: string) {
+    setPicking(role);
+    try {
+      await http.patch("/auth/role", { role });
+      setRole(role);
+      navigate({ to });
+    } catch {
+      toast.error("Failed to update role");
+    } finally {
+      setPicking(null);
+    }
   }
 
   return (
@@ -83,8 +93,8 @@ function RoleSelectPage() {
                   <div className="font-medium">{title}</div>
                   <p className="text-sm text-muted-foreground mt-1">{desc}</p>
                 </div>
-                <Button size="sm" variant="outline" className="w-full">
-                  Continue as {role}
+                <Button size="sm" variant="outline" className="w-full" disabled={picking === role}>
+                  {picking === role ? "Applying…" : `Continue as ${role}`}
                 </Button>
               </CardContent>
             </Card>

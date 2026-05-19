@@ -17,17 +17,24 @@ function LoginPage() {
   useThemeEffect();
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
-  const [email, setEmail] = useState("admin@routeline.app");
+  const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("demo1234");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const user = await authApi.login(email, password);
-    login(user);
-    setLoading(false);
-    navigate({ to: "/role-select" });
+    setError("");
+    try {
+      const result = await authApi.login(username, password);
+      login(result.user, result.accessToken, result.refreshToken);
+      navigate({ to: "/role-select" });
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Login failed");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -75,13 +82,15 @@ function LoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={submit} className="space-y-4">
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="username">Username</Label>
                 <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   required
                 />
               </div>

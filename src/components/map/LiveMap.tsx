@@ -69,6 +69,9 @@ function LeafletMap({
   const theme = useUIStore((s) => s.theme);
   const positions = useLivePositions((s) => s.positions);
 
+  const onPickRef = useRef(onPick);
+  onPickRef.current = onPick;
+
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const map = L.map(containerRef.current, {
@@ -85,11 +88,9 @@ function LeafletMap({
     driverLayerRef.current = L.layerGroup().addTo(map);
     routeLayerRef.current = L.layerGroup().addTo(map);
     pinLayerRef.current = L.layerGroup().addTo(map);
-    if (onPick) {
-      map.on("click", (e: LeafletNS.LeafletMouseEvent) =>
-        onPick({ lat: e.latlng.lat, lng: e.latlng.lng }),
-      );
-    }
+    map.on("click", (e: LeafletNS.LeafletMouseEvent) => {
+      onPickRef.current?.({ lat: e.latlng.lat, lng: e.latlng.lng });
+    });
     return () => {
       map.remove();
       mapRef.current = null;

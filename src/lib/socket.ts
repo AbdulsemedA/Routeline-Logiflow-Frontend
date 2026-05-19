@@ -2,9 +2,58 @@ import type { SocketEventMap, SocketEventName } from "@/types";
 
 type Handler<E extends SocketEventName> = (payload: SocketEventMap[E]) => void;
 
-class MockSocket {
+const WS_URL = import.meta.env.VITE_WS_URL || "ws://localhost:8000/ws/stream/";
+
+class RealSocket {
+  private ws: WebSocket | null = null;
   private handlers = new Map<SocketEventName, Set<Handler<any>>>();
-  connected = true;
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private closed = false;
+  connected = false;
+
+  constructor() {
+    this.connect();
+  }
+
+  private connect() {
+    if (this.closed) return;
+    try {
+      this.ws = new WebSocket(WS_URL);
+    } catch {
+      this.scheduleReconnect();
+      return;
+    }
+
+    this.ws.onopen = () => {
+      this.connected = true;
+    };
+
+    this.ws.onmessage = (event) => {
+      try {
+        const msg = JSON.parse(event.data);
+        const { event: eventName, data } = msg;
+        if (eventName && this.handlers.has(eventName)) {
+          this.handlers.get(eventName)!.forEach((h) => h(data));
+        }
+      } catch {
+        // ignore
+      }
+    };
+
+    this.ws.onclose = () => {
+      this.connected = false;
+      this.scheduleReconnect();
+    };
+
+    this.ws.onerror = () => {
+      this.ws?.close();
+    };
+  }
+
+  private scheduleReconnect() {
+    if (this.closed) return;
+    this.reconnectTimer = setTimeout(() => this.connect(), 3000);
+  }
 
   on<E extends SocketEventName>(event: E, handler: Handler<E>) {
     if (!this.handlers.has(event)) this.handlers.set(event, new Set());
@@ -16,15 +65,12 @@ class MockSocket {
     this.handlers.get(event)?.delete(handler as Handler<any>);
   }
 
-  emit<E extends SocketEventName>(event: E, payload: SocketEventMap[E]) {
-    this.handlers.get(event)?.forEach((h) => {
-      try {
-        h(payload);
-      } catch (e) {
-        console.error("socket handler error", e);
-      }
-    });
+  destroy() {
+    this.closed = true;
+    if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
+    this.ws?.close();
+    this.handlers.clear();
   }
 }
 
-export const socket = new MockSocket();
+export const socket = new RealSocket();

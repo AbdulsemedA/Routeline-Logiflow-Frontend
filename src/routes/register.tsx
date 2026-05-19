@@ -20,14 +20,21 @@ function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const user = await authApi.register(name, email, password);
-    login(user);
-    setLoading(false);
-    navigate({ to: "/role-select" });
+    setError("");
+    try {
+      const result = await authApi.register(name, email, password);
+      login(result.user, result.accessToken, result.refreshToken);
+      navigate({ to: "/role-select" });
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -37,8 +44,11 @@ function RegisterPage() {
           <CardTitle>Create account</CardTitle>
           <CardDescription>Start dispatching in under a minute.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={submit} className="space-y-4">
+          <CardContent>
+            <form onSubmit={submit} className="space-y-4">
+              {error && (
+                <p className="text-sm text-destructive">{error}</p>
+              )}
             <div className="space-y-2">
               <Label htmlFor="name">Full name</Label>
               <Input id="name" value={name} onChange={(e) => setName(e.target.value)} required />

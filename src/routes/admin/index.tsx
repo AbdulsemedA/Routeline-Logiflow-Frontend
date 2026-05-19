@@ -115,7 +115,7 @@ function DashboardInner() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-2 p-3">
+        <Card className="lg:col-span-2 p-3 isolate">
           <div className="flex items-center justify-between mb-3 px-1">
             <div>
               <div className="text-sm font-medium">Live fleet map</div>

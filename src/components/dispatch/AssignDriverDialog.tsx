@@ -51,16 +51,18 @@ export function AssignDriverDialog({ delivery, drivers, onClose }: Props) {
   const suggested = ranked[0];
 
   const assign = useMutation({
-    mutationFn: (driverId: string) =>
-      deliveriesApi.assign(delivery!.id, driverId),
-    onSuccess: (_, driverId) => {
-      const drv = drivers.find((d) => d.id === driverId);
-      toast.success(`Assigned to ${drv?.name ?? "driver"}`);
+    mutationFn: () =>
+      deliveriesApi.updateStatus(delivery!.id, "assigned", {
+        driverId: selectedId ?? suggested!.driver.id,
+      }),
+    onSuccess: () => {
+      const name = drivers.find((d) => d.id === (selectedId ?? suggested?.driver.id))?.name;
+      toast.success(`Assigned to ${name ?? "driver"}`);
       qc.invalidateQueries({ queryKey: ["deliveries"] });
       qc.invalidateQueries({ queryKey: ["drivers"] });
       onClose();
     },
-    onError: () => toast.error("Failed to assign driver"),
+    onError: () => toast.error("Failed to assign delivery"),
   });
 
   const open = !!delivery;
@@ -113,9 +115,7 @@ export function AssignDriverDialog({ delivery, drivers, onClose }: Props) {
           </Button>
           <Button
             disabled={!selectedId && !suggested}
-            onClick={() =>
-              assign.mutate(selectedId ?? suggested!.driver.id)
-            }
+            onClick={() => assign.mutate()}
           >
             {assign.isPending ? "Assigning…" : "Assign"}
           </Button>

@@ -1,79 +1,99 @@
-import type { Delivery, Driver, DeliveryStatus, Location } from "@/types";
-import { generateDeliveries, generateDrivers, CITY_CENTER } from "./mockData";
-import { buildRoute, etaMinutes, haversineKm, interpolateRoute } from "./geo";
-import { socket } from "./socket";
+import type { Delivery, Driver, Location } from "@/types";
+import http from "./http";
 
-// In-memory "database"
-let drivers: Driver[] = [];
-let deliveries: Delivery[] = [];
-let initialized = false;
-// Per-driver progress along their active delivery route (0..1)
-const progress = new Map<string, number>();
-
-function init() {
-  if (initialized) return;
-  drivers = generateDrivers(16);
-  deliveries = generateDeliveries(drivers, 24);
-  // initialize progress for in-transit deliveries
-  for (const d of deliveries) {
-    if (d.assignedDriverId && (d.status === "picked_up" || d.status === "in_transit")) {
-      progress.set(d.assignedDriverId, Math.random() * 0.7);
-    }
-  }
-  initialized = true;
-  startSimulation();
+function mapDriver(d: any): Driver {
+  return {
+    id: d.id,
+    name: d.name,
+    phone: d.phone,
+    status: d.status,
+    currentLocation: d.currentLocation ?? { lat: 0, lng: 0 },
+    vehicle: {
+      id: d.vehicle?.id ?? "",
+      type: d.vehicle?.type ?? "van",
+      plate: d.vehicle?.plate ?? "",
+      capacityKg: d.vehicle?.capacityKg ?? 0,
+    },
+    rating: d.rating,
+    deliveriesCompleted: d.deliveriesCompleted,
+    onTimeRate: d.onTimeRate,
+    activeDeliveryId: d.activeDeliveryId ?? undefined,
+  };
 }
 
-function sleep(ms: number) {
-  return new Promise((r) => setTimeout(r, ms));
+function mapDelivery(d: any): Delivery {
+  return {
+    id: d.id,
+    customerId: d.customerId,
+    customerName: d.customerName,
+    pickup: d.pickup,
+    dropoff: d.dropoff,
+    package: d.package,
+    status: d.status,
+    assignedDriverId: d.assignedDriverId ?? undefined,
+    createdAt: d.created,
+    etaMinutes: d.etaMinutes ?? undefined,
+    distanceKm: d.distanceKm,
+    priceUsd: d.priceUsd,
+    route: d.route ?? [],
+    events: d.events ?? [],
+  };
 }
 
-async function delay<T>(value: T, ms = 220): Promise<T> {
-  await sleep(ms + Math.random() * 120);
-  return value;
-}
-
-// ---------- Auth ----------
 export const authApi = {
-  async login(email: string, _password: string) {
-    return delay({
-      id: "usr_self",
-      name: email.split("@")[0] || "User",
-      email,
-      role: "admin" as const,
+  async login(username: string, password: string) {
+    const { data } = await http.post("/auth/login", { username, password });
+    const tokenRes = await http.get("/auth/me", {
+      headers: { Authorization: `Bearer ${data.access}` },
     });
+    return {
+      user: {
+        id: tokenRes.data.id,
+        name: tokenRes.data.username,
+        email: tokenRes.data.email,
+        role: tokenRes.data.role as "admin" | "driver" | "customer",
+      },
+      accessToken: data.access,
+      refreshToken: data.refresh,
+    };
   },
-  async register(name: string, email: string, _password: string) {
-    return delay({
-      id: "usr_self",
-      name,
-      email,
-      role: "customer" as const,
-    });
+  async register(name: string, email: string, password: string) {
+    await http.post("/auth/register", { username: name, email, password });
+    return authApi.login(name, password);
   },
 };
 
-// ---------- Drivers ----------
 export const driversApi = {
   async list(): Promise<Driver[]> {
-    init();
-    return delay([...drivers]);
+    const { data } = await http.get("/drivers/");
+    return (data.results ?? data).map(mapDriver);
   },
   async get(id: string): Promise<Driver | undefined> {
-    init();
-    return delay(drivers.find((d) => d.id === id));
+    const { data } = await http.get(`/drivers/${id}`);
+    return mapDriver(data);
+  },
+  async nearby(lat: number, lng: number): Promise<Driver[]> {
+    const { data } = await http.get("/drivers/nearby", { params: { lat, lng } });
+    return data.map(mapDriver);
+  },
+  async updateLocation(lat: number, lng: number): Promise<Driver> {
+    const { data } = await http.post("/drivers/location", { lat, lng });
+    return mapDriver(data);
+  },
+  async updateStatus(status: "active" | "idle" | "offline"): Promise<Driver> {
+    const { data } = await http.patch("/drivers/status", { status });
+    return mapDriver(data);
   },
 };
 
-// ---------- Deliveries ----------
 export const deliveriesApi = {
   async list(): Promise<Delivery[]> {
-    init();
-    return delay([...deliveries]);
+    const { data } = await http.get("/deliveries/");
+    return (data.results ?? data).map(mapDelivery);
   },
   async get(id: string): Promise<Delivery | undefined> {
-    init();
-    return delay(deliveries.find((d) => d.id === id));
+    const { data } = await http.get(`/deliveries/${id}`);
+    return mapDelivery(data);
   },
   async create(input: {
     customerName: string;
@@ -83,13 +103,8 @@ export const deliveriesApi = {
     weightKg: number;
     fragile: boolean;
   }): Promise<Delivery> {
-    init();
-    const dist = Number(haversineKm(input.pickup, input.dropoff).toFixed(2));
-    const route = buildRoute(input.pickup, input.dropoff);
-    const now = new Date().toISOString();
-    const delivery: Delivery = {
-      id: `dlv_${Date.now()}`,
-      customerId: "cus_self",
+    const { data } = await http.post("/deliveries/", {
+      customerId: "self",
       customerName: input.customerName,
       pickup: input.pickup,
       dropoff: input.dropoff,
@@ -98,240 +113,22 @@ export const deliveriesApi = {
         weightKg: input.weightKg,
         fragile: input.fragile,
       },
-      status: "pending",
-      createdAt: now,
-      etaMinutes: etaMinutes(dist),
-      distanceKm: dist,
-      priceUsd: Number((6 + dist * 1.7).toFixed(2)),
-      route,
-      events: [{ status: "pending", timestamp: now }],
-    };
-    deliveries = [delivery, ...deliveries];
-    socket.emit("order:new", { delivery });
-    return delay(delivery);
-  },
-  async assign(deliveryId: string, driverId: string): Promise<Delivery> {
-    init();
-    const dlv = deliveries.find((d) => d.id === deliveryId);
-    const drv = drivers.find((d) => d.id === driverId);
-    if (!dlv || !drv) throw new Error("Not found");
-    dlv.status = "assigned";
-    dlv.assignedDriverId = driverId;
-    dlv.events.push({
-      status: "assigned",
-      timestamp: new Date().toISOString(),
-      actorId: driverId,
     });
-    drv.activeDeliveryId = deliveryId;
-    drv.status = "active";
-    progress.set(driverId, 0);
-    socket.emit("dispatch:assigned", { deliveryId, driverId });
-    socket.emit("delivery:status", { deliveryId, status: "assigned" });
-    return delay(dlv);
+    return mapDelivery(data);
   },
-  async updateStatus(deliveryId: string, status: DeliveryStatus): Promise<Delivery> {
-    init();
-    const dlv = deliveries.find((d) => d.id === deliveryId);
-    if (!dlv) throw new Error("Not found");
-    dlv.status = status;
-    dlv.events.push({
-      status,
-      timestamp: new Date().toISOString(),
-      actorId: dlv.assignedDriverId,
-    });
-    if (status === "delivered" && dlv.assignedDriverId) {
-      const drv = drivers.find((d) => d.id === dlv.assignedDriverId);
-      if (drv) {
-        drv.activeDeliveryId = undefined;
-        drv.status = "idle";
-        drv.deliveriesCompleted += 1;
-      }
-    }
-    socket.emit("delivery:status", { deliveryId, status });
-    return delay(dlv);
+  async updateStatus(deliveryId: string, status: Delivery["status"], extra: Record<string, any> = {}): Promise<Delivery> {
+    const { data } = await http.patch(`/deliveries/${deliveryId}/status`, { status, ...extra });
+    return mapDelivery(data);
   },
 };
 
-// ---------- Analytics ----------
 export const analyticsApi = {
   async summary() {
-    init();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayTs = today.getTime();
-    const completedToday = deliveries.filter(
-      (d) =>
-        d.status === "delivered" &&
-        new Date(d.events[d.events.length - 1].timestamp).getTime() >= todayTs,
-    ).length;
-    const active = deliveries.filter((d) =>
-      ["assigned", "picked_up", "in_transit"].includes(d.status),
-    ).length;
-    const activeDrivers = drivers.filter((d) => d.status === "active").length;
-    const avgEta =
-      deliveries.reduce((sum, d) => sum + (d.etaMinutes ?? 0), 0) /
-      Math.max(1, deliveries.length);
-    return delay({
-      activeDeliveries: active,
-      activeDrivers,
-      completedToday,
-      avgDeliveryMin: Number(avgEta.toFixed(1)),
-      totalDrivers: drivers.length,
-    });
+    const { data } = await http.get("/analytics/summary");
+    return data;
   },
   async series() {
-    init();
-    // 14-day deliveries-per-day
-    const perDay = Array.from({ length: 14 }, (_, i) => {
-      const d = new Date();
-      d.setDate(d.getDate() - (13 - i));
-      return {
-        date: d.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
-        deliveries: 60 + Math.round(Math.random() * 80),
-        avgMinutes: 18 + Math.round(Math.random() * 14),
-      };
-    });
-    const peakHours = Array.from({ length: 24 }, (_, h) => ({
-      hour: `${h}:00`,
-      demand:
-        Math.round(
-          20 +
-            Math.abs(Math.sin((h - 6) / 3)) * 80 +
-            (h >= 11 && h <= 13 ? 30 : 0) +
-            (h >= 17 && h <= 19 ? 40 : 0),
-        ),
-    }));
-    const driverEfficiency = drivers
-      .slice()
-      .sort((a, b) => b.onTimeRate - a.onTimeRate)
-      .slice(0, 8)
-      .map((d) => ({
-        name: d.name.split(" ")[0],
-        score: Math.round(d.onTimeRate * 100),
-        deliveries: d.deliveriesCompleted,
-      }));
-    return delay({ perDay, peakHours, driverEfficiency });
+    const { data } = await http.get("/analytics/series");
+    return data;
   },
 };
-
-// ---------- Simulation ----------
-function startSimulation() {
-  if (typeof window === "undefined") return;
-
-  // Tick: move drivers along routes / random walk
-  setInterval(() => {
-    for (const drv of drivers) {
-      if (drv.status === "offline") continue;
-      if (drv.activeDeliveryId) {
-        const dlv = deliveries.find((d) => d.id === drv.activeDeliveryId);
-        if (!dlv) continue;
-        // Advance progress
-        let p = progress.get(drv.id) ?? 0;
-        p = Math.min(1, p + 0.012 + Math.random() * 0.008);
-        progress.set(drv.id, p);
-        const loc = interpolateRoute(dlv.route, p);
-        drv.currentLocation = loc;
-        socket.emit("driver:move", { driverId: drv.id, location: loc });
-
-        // Transition statuses based on progress
-        if (p > 0.05 && dlv.status === "assigned") {
-          dlv.status = "picked_up";
-          dlv.events.push({
-            status: "picked_up",
-            timestamp: new Date().toISOString(),
-            actorId: drv.id,
-          });
-          socket.emit("delivery:status", {
-            deliveryId: dlv.id,
-            status: "picked_up",
-          });
-        } else if (p > 0.15 && dlv.status === "picked_up") {
-          dlv.status = "in_transit";
-          dlv.events.push({
-            status: "in_transit",
-            timestamp: new Date().toISOString(),
-            actorId: drv.id,
-          });
-          socket.emit("delivery:status", {
-            deliveryId: dlv.id,
-            status: "in_transit",
-          });
-        } else if (p >= 1 && dlv.status !== "delivered") {
-          dlv.status = "delivered";
-          dlv.events.push({
-            status: "delivered",
-            timestamp: new Date().toISOString(),
-            actorId: drv.id,
-          });
-          drv.activeDeliveryId = undefined;
-          drv.status = "idle";
-          drv.deliveriesCompleted += 1;
-          progress.delete(drv.id);
-          socket.emit("delivery:status", {
-            deliveryId: dlv.id,
-            status: "delivered",
-          });
-        }
-      } else if (drv.status === "active" || drv.status === "idle") {
-        // small jitter so the map feels alive
-        drv.currentLocation = {
-          lat: drv.currentLocation.lat + (Math.random() - 0.5) * 0.0015,
-          lng: drv.currentLocation.lng + (Math.random() - 0.5) * 0.0015,
-        };
-        socket.emit("driver:move", {
-          driverId: drv.id,
-          location: drv.currentLocation,
-        });
-      }
-    }
-  }, 1500);
-
-  // Occasionally drop a new pending order
-  setInterval(
-    () => {
-      const pickup = randomNear();
-      const dropoff = randomNear();
-      const dist = Number(haversineKm(pickup, dropoff).toFixed(2));
-      const route = buildRoute(pickup, dropoff);
-      const now = new Date().toISOString();
-      const delivery: Delivery = {
-        id: `dlv_${Date.now()}`,
-        customerId: `cus_${Math.floor(Math.random() * 1000)}`,
-        customerName: ["Northwind", "Acme", "Globex", "Soylent"][
-          Math.floor(Math.random() * 4)
-        ]!,
-        pickup,
-        dropoff,
-        package: {
-          description: ["Documents", "Electronics", "Groceries"][
-            Math.floor(Math.random() * 3)
-          ]!,
-          weightKg: Number((Math.random() * 20).toFixed(1)),
-          fragile: Math.random() < 0.2,
-        },
-        status: "pending",
-        createdAt: now,
-        etaMinutes: etaMinutes(dist),
-        distanceKm: dist,
-        priceUsd: Number((6 + dist * 1.7).toFixed(2)),
-        route,
-        events: [{ status: "pending", timestamp: now }],
-      };
-      deliveries = [delivery, ...deliveries];
-      socket.emit("order:new", { delivery });
-    },
-    22_000,
-  );
-}
-
-function randomNear(): Location {
-  const r = 5 / 111;
-  const u = Math.random();
-  const v = Math.random();
-  const w = r * Math.sqrt(u);
-  const t = 2 * Math.PI * v;
-  return {
-    lat: CITY_CENTER.lat + w * Math.cos(t),
-    lng: CITY_CENTER.lng + (w * Math.sin(t)) / Math.cos((CITY_CENTER.lat * Math.PI) / 180),
-  };
-}
