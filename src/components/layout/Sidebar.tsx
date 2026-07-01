@@ -6,14 +6,14 @@ import {
   Package,
   MapPin,
   Users,
-  Settings,
   LogOut,
-  Radar,
 } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { useUIStore } from "@/store/ui";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/brand/Logo";
+
 
 type NavItem = { to: string; label: string; icon: React.ComponentType<{ className?: string }> };
 
@@ -48,14 +48,12 @@ export function Sidebar() {
         collapsed ? "w-16" : "w-60",
       )}
     >
-      <div className="flex items-center gap-2 h-14 px-4 border-b border-sidebar-border">
-        <div className="h-8 w-8 rounded-md bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center">
-          <Radar className="h-4 w-4" />
-        </div>
-        {!collapsed && (
-          <div className="text-sm font-semibold tracking-tight">Routeline</div>
-        )}
+      <div className="flex items-center h-14 px-4 border-b border-sidebar-border">
+        <Link to="/" className="flex items-center">
+          <Logo showWordmark={!collapsed} size="sm" />
+        </Link>
       </div>
+
       <nav className="flex-1 p-2 space-y-1">
         {items.map((item) => {
           const active =

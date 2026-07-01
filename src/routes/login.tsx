@@ -11,7 +11,17 @@ import { useThemeEffect } from "@/hooks/useThemeEffect";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
+  head: () => ({
+    meta: [
+      { title: "Sign in — Routeline" },
+      { name: "description", content: "Sign in to your Routeline dispatch dashboard." },
+      { property: "og:title", content: "Sign in — Routeline" },
+      { property: "og:url", content: "/login" },
+    ],
+    links: [{ rel: "canonical", href: "/login" }],
+  }),
 });
+
 
 function LoginPage() {
   useThemeEffect();
