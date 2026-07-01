@@ -1,88 +1,62 @@
+## Goal
+Add a stunning public landing page at `/` plus proper site-wide branding (logo, favicon, head metadata) — keeping the existing Routeline theme and color tokens.
 
-# Smart Logistics & Delivery Dispatch — Frontend Build Plan
+## Changes
 
-## Stack (locked in)
+### 1. New landing route (`/`)
+- Move current redirect logic from `src/routes/index.tsx` → new `src/routes/app.tsx` (or handle redirect only when user is already logged in, via a subtle "Go to dashboard" CTA instead of auto-redirect).
+- Rebuild `src/routes/index.tsx` as a full marketing landing page using existing semantic tokens (`bg-background`, `bg-sidebar`, `text-primary`, chart colors) — no hardcoded colors.
 
-- **Vite + React 18 + TypeScript** (React Router v6 for routing)
-- **TailwindCSS** + shadcn/ui primitives + semantic design tokens (dark/light)
-- **Zustand** (auth, notifications, live driver positions, UI prefs)
-- **TanStack Query** (server-state cache for deliveries/drivers/analytics)
-- **Leaflet + react-leaflet** + `leaflet.markercluster` (free, no token)
-- **Recharts** for analytics
-- **Mock Socket.IO layer** — same `on/off/emit` API as `socket.io-client`, driven by `setInterval`. Swap-in real Socket.IO later by changing one import.
-- **MSW-style mock API** in `/lib/api` returning realistic seeded data with simulated latency.
+**Sections:**
+1. **Sticky top header** — Routeline logo + wordmark, nav (Features, How it works, Analytics, Pricing anchors), theme toggle, "Sign in" ghost button, "Get started" primary button.
+2. **Hero** — Big headline ("Real-time dispatch for fleets that don't stop."), subcopy, dual CTAs, trust stats row (12k+ routes, 98.7% on-time, <3s dispatch), decorative mock dashboard card (map + dispatch panel preview) with subtle gradient glow using primary token.
+3. **Live logos strip** — fake partner logos as monochrome text (uses muted-foreground).
+4. **Features grid** (6 cards) — Live map, Smart dispatch, Driver ranking, Analytics, Realtime tracking, Role-based access. Lucide icons, card tokens.
+5. **How it works** — 3-step timeline (Order → AI Assign → Track & Deliver).
+6. **Product preview split** — screenshot-style mock of admin dashboard side, copy on the other.
+7. **Role callouts** — 3 cards: Admins / Drivers / Customers with mini feature bullets and links to `/login`.
+8. **Analytics teaser** — small recharts area chart using chart tokens.
+9. **CTA banner** — gradient panel using `--primary` / sidebar tokens, "Start dispatching in minutes".
+10. **Footer** — logo, columns (Product, Company, Legal), copyright, socials.
 
-## Folder structure
+**Design polish:**
+- Subtle grid/dot background pattern via CSS radial-gradient using border token.
+- Glow accents via `color-mix` on primary.
+- Framer-motion-light entrance animations (fade+translate) using CSS only (no new dep).
+- Fully responsive; mobile menu via existing Sheet component.
 
-```text
-src/
-  routes/                  router config + lazy route components
-  pages/
-    auth/                  Login, Register, RoleSelect
-    admin/                 Dashboard, Fleet, Analytics, DeliveryDetail
-    driver/                Dashboard, History
-    customer/              NewDelivery, Tracking
-  components/
-    ui/                    shadcn primitives
-    layout/                Sidebar, Topbar, AppShell, RoleGuard
-    map/                   MapCanvas, DriverMarker, RouteLayer, Cluster
-    dashboard/             StatCard, LiveBadge, EmptyState, Skeletons
-    dispatch/              PendingOrders, AssignDriverDialog, SmartSuggestion
-  features/
-    deliveries/            hooks, queries, types, mock data
-    drivers/               hooks, queries, simulator (movement engine)
-    analytics/             aggregators, chart configs
-    notifications/         toast bus + notification center
-  hooks/                   useSocket, useGeolocation, useMediaQuery, useTheme
-  lib/
-    api/                   axios-like client + endpoints (auth, deliveries, drivers, analytics)
-    socket/                mockSocket.ts (Socket.IO-compatible), events.ts
-    geo/                   haversine, ETA, bbox, route interpolation
-    utils.ts
-  store/                   auth.ts, ui.ts, livePositions.ts, notifications.ts
-  types/                   user.ts, driver.ts, delivery.ts, location.ts, vehicle.ts, events.ts
-  styles/                  index.css (tokens), themes
-```
+### 2. Logo asset
+- Generate a transparent PNG brand mark (Routeline radar/route glyph) at `src/assets/routeline-logo.png` using imagegen (premium, transparent bg).
+- Create a tiny `Logo` component (`src/components/brand/Logo.tsx`) rendering icon + "Routeline" wordmark, reused in header, footer, sidebar, login.
 
-## Pages (all 7)
+### 3. Favicon
+- Save the same mark as `public/favicon.png`.
+- Delete default `public/favicon.ico`.
+- Register in `src/routes/__root.tsx` `head().links`.
 
-1. **/login, /register, /role-select** — clean centered card layout, role tiles (Admin / Driver / Customer), mock auth persisted via Zustand + localStorage. Role guards on all app routes.
-2. **/admin** (main screen) — `AppShell` with collapsible sidebar + top status bar (live KPI ticker). Grid: 5 stat cards → Map (2/3 width) + Dispatch panel (1/3 width) → recent activity feed. Map shows clustered driver markers moving in real time, active delivery routes, pickup/dropoff pins. Dispatch panel lists pending orders with "Assign Driver" → opens dialog with **Smart Suggestion** (top-ranked driver by distance + load + rating).
-3. **/driver** — current assignment card, route map with polyline, Start/Pickup/Complete action stepper, "Share live location" toggle (drives the simulator), history list below.
-4. **/customer/new** + **/customer/tracking/:id** — map-based pickup/dropoff selector (click map to drop pin), package details form, then live tracking view with animated driver marker + ETA + status timeline.
-5. **/admin/fleet** — paginated/sortable table: driver, status badge (active/idle/offline), current location (reverse-geocoded label), deliveries completed, rating, on-time %. Row click → driver drawer.
-6. **/admin/analytics** — Recharts: deliveries/day (area), avg delivery time (line), driver efficiency (bar), peak hours (radial/bar), delivery activity heatmap (custom grid component over Leaflet using a hex bin).
-7. **/deliveries/:id** — full timeline (created → assigned → picked up → in transit → delivered), route polyline on map, driver card, status event log with timestamps.
+### 4. Head metadata
+- `__root.tsx`: replace placeholder "Lovable App"/"Lovable Generated Project" with real defaults:
+  - title: "Routeline — Smart Logistics & Dispatch Platform"
+  - description: "Real-time dispatch, live fleet map, and AI-powered driver assignment for modern logistics teams."
+  - og:site_name, og:type=website, twitter:card=summary_large_image, author, theme-color.
+  - Keep favicon link.
+- `index.tsx` (landing) leaf-level `head()`: page-specific title/description, `og:title`, `og:description`, `og:url` (`/`), canonical `/`, plus Organization JSON-LD.
+- `login.tsx` / `register.tsx`: distinct titles ("Sign in — Routeline", "Create account — Routeline").
+- Skip `og:image` for now (no absolute URL available; hosting injects screenshot).
 
-## Realtime simulation
+### 5. Auth redirect adjustment
+- On `/`, if user is authenticated, show a small "Continue to dashboard →" pill in the header instead of auto-redirecting, so the landing page is always viewable.
 
-`lib/socket/mockSocket.ts` exposes `socket.on('driver:move', ...)`, `'delivery:status'`, `'order:new'`, `'dispatch:assigned'`. A background **driver simulator** interpolates each active driver along their route polyline every 1.5s and emits events. Zustand `livePositions` store consumes events; map components subscribe via selector so only marker positions re-render. New orders drop into the dispatch panel every ~20s.
+## Out of scope
+- Pricing page content (anchor only).
+- Blog/docs routes.
+- Real og:image generation (can add later once domain is set).
 
-## Data models (`/types`)
-
-`User`, `Role`, `Driver` (with `Vehicle`, status, currentLocation, rating, stats), `Delivery` (pickup, dropoff, status, assignedDriverId, route, events[]), `Location` (lat/lng/label), `Vehicle` (type, plate, capacity), `DeliveryStatusEvent` (status, timestamp, actorId, note).
-
-## UI/UX
-
-- Semantic Tailwind tokens in `index.css` (`--background`, `--primary`, `--success`, `--warning`, `--muted`…) — full dark/light parity. No hardcoded colors in components.
-- Sidebar + topbar shell, card-based widgets, skeleton loaders, empty states, sonner toasts, smooth Framer-Motion-light transitions (CSS only to keep bundle lean).
-- Fully responsive: sidebar collapses to bottom nav on mobile; map and dispatch stack vertically.
-
-## Performance
-
-- `React.lazy` + `Suspense` per route.
-- Memoized map (`React.memo` + stable props); marker layer keyed by driver id; cluster plugin for >50 drivers.
-- Zustand selectors with `shallow` to scope re-renders to changed markers only.
-- Tables paginated + virtualized where >100 rows.
-
-## API layer (`/lib/api`)
-
-Typed client with `auth.ts`, `deliveries.ts`, `drivers.ts`, `analytics.ts`. Every function returns a Promise (200–400ms simulated latency) so swapping for real `fetch` later is mechanical. TanStack Query keys centralized in `features/*/queries.ts`.
-
-## Out of scope this pass
-
-Optional upgrades (AI dispatch panel beyond a stub, real traffic data, advanced ranking ML) — stubs/placeholders only, easy to extend.
-
-## Deliverable
-
-A runnable Lovable preview with seeded data: log in as Admin to see the live dispatch dashboard with drivers moving on the map, assign a pending order, switch to Driver role to see the assignment, switch to Customer to create + track a delivery.
+## Files touched
+- `src/routes/index.tsx` (rewrite)
+- `src/routes/__root.tsx` (metadata + favicon link)
+- `src/routes/login.tsx`, `src/routes/register.tsx` (head + Logo)
+- `src/components/brand/Logo.tsx` (new)
+- `src/components/layout/Sidebar.tsx` (swap to Logo)
+- `src/assets/routeline-logo.png` (new, generated)
+- `public/favicon.png` (new), remove `public/favicon.ico`
