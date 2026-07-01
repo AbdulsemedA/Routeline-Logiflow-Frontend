@@ -10,7 +10,17 @@ import { useThemeEffect } from "@/hooks/useThemeEffect";
 
 export const Route = createFileRoute("/register")({
   component: RegisterPage,
+  head: () => ({
+    meta: [
+      { title: "Create account — Routeline" },
+      { name: "description", content: "Create a Routeline account and start dispatching in minutes." },
+      { property: "og:title", content: "Create account — Routeline" },
+      { property: "og:url", content: "/register" },
+    ],
+    links: [{ rel: "canonical", href: "/register" }],
+  }),
 });
+
 
 function RegisterPage() {
   useThemeEffect();
