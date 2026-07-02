@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Real-time dispatch, live fleet map, and AI-powered driver assignment for modern logistics teams.",
+          "Real-time dispatch, live fleet map, and AI-powered driver assignment for modern logistics teams. Empower your supply chain.",
       },
       { name: "author", content: "Routeline" },
       { name: "theme-color", content: "#0f172a" },
+      { property: "og:title", content: "Routeline — Smart Logistics & Dispatch Platform" },
+      { property: "og:description", content: "Real-time dispatch, live fleet map, and AI-powered driver assignment for modern logistics teams." },
+      { property: "og:image", content: "/favicon.png" },
       { property: "og:site_name", content: "Routeline" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:site", content: "@routeline" },
+      { name: "twitter:image", content: "/favicon.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
