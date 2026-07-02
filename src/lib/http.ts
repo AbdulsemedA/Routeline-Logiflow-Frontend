@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useAuthStore } from "@/store/auth";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
@@ -27,8 +28,7 @@ http.interceptors.response.use(
   (res) => res,
   async (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("dispatch.auth");
-      window.location.href = "/login";
+      useAuthStore.getState().logout();
     }
     return Promise.reject(error);
   },

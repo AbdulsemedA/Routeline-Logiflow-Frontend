@@ -1,4 +1,4 @@
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Truck,
@@ -38,6 +38,7 @@ export function Sidebar() {
   const logout = useAuthStore((s) => s.logout);
   const collapsed = useUIStore((s) => s.sidebarCollapsed);
   const location = useLocation();
+  const navigate = useNavigate();
   const role = user?.role ?? "admin";
   const items = NAV[role] ?? [];
 
@@ -49,7 +50,7 @@ export function Sidebar() {
       )}
     >
       <div className="flex items-center h-14 px-4 border-b border-sidebar-border">
-        <Link to="/" className="flex items-center">
+        <Link to={(items[0]?.to || "/") as any} className="flex items-center">
           <Logo showWordmark={!collapsed} size="sm" />
         </Link>
       </div>
@@ -91,7 +92,7 @@ export function Sidebar() {
           className="w-full justify-start gap-3 text-sidebar-foreground/80 hover:bg-sidebar-accent/60"
           onClick={() => {
             logout();
-            if (typeof window !== "undefined") window.location.href = "/login";
+            navigate({ to: "/login" });
           }}
         >
           <LogOut className="h-4 w-4 shrink-0" />

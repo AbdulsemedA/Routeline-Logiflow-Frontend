@@ -50,12 +50,12 @@ function LoginPage() {
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background text-foreground">
       <div className="hidden lg:flex flex-col justify-between p-10 bg-sidebar text-sidebar-foreground border-r border-sidebar-border">
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2">
           <div className="h-9 w-9 rounded-md bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center">
             <Radar className="h-4 w-4" />
           </div>
           <span className="font-semibold tracking-tight">Routeline</span>
-        </div>
+        </Link>
         <div className="space-y-4 max-w-md">
           <h1 className="text-3xl font-semibold leading-tight">
             Real-time dispatch for fleets that don't stop.

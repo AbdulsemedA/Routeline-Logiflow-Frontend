@@ -158,7 +158,7 @@ function Header({
           </Button>
           {hasUser ? (
             <Button asChild size="sm">
-              <Link to={dashboardHref}>
+              <Link to={dashboardHref as any}>
                 Go to dashboard <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </Button>
@@ -209,7 +209,7 @@ function Hero({ hasUser, dashboardHref }: { hasUser: boolean; dashboardHref: str
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           {hasUser ? (
             <Button asChild size="lg">
-              <Link to={dashboardHref}>
+              <Link to={dashboardHref as any}>
                 Open dashboard <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -221,7 +221,7 @@ function Hero({ hasUser, dashboardHref }: { hasUser: boolean; dashboardHref: str
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link to="/login">See a live demo</Link>
+                <Link to="/login">Sign in</Link>
               </Button>
             </>
           )}

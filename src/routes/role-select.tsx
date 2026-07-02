@@ -47,14 +47,9 @@ function RoleSelectPage() {
 
   useEffect(() => {
     if (!user) {
-      login({
-        id: "usr_self",
-        name: "Demo User",
-        email: "demo@routeline.app",
-        role: "admin",
-      }, "", "");
+      navigate({ to: "/login" });
     }
-  }, [user, login]);
+  }, [user, navigate]);
 
   async function pick(role: Role, to: string) {
     setPicking(role);
