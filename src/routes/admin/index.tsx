@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AppShell } from "@/components/layout/AppShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { LiveMap } from "@/components/map/LiveMap";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { DeliveryStatusBadge } from "@/components/dashboard/StatusBadge";
@@ -76,12 +77,12 @@ function DashboardInner() {
 
   return (
     <div className="p-4 md:p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Dispatch overview</h1>
-        <p className="text-sm text-muted-foreground">
-          Live operational view of your fleet and orders.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Dispatch cockpit"
+        title="Dispatch overview"
+        description="Live operational view of your fleet and orders — updates stream in every few seconds."
+      />
+
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatCard

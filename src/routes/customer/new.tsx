@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useState } from "react";
 import { LiveMap } from "@/components/map/LiveMap";
 import { Card } from "@/components/ui/card";
@@ -55,12 +56,12 @@ function Inner() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">New delivery</h1>
-        <p className="text-sm text-muted-foreground">
-          Click the map to set {step === "pickup" ? "pickup" : "dropoff"} location.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="New request"
+        title="Book a delivery"
+        description={`Click the map to set the ${step === "pickup" ? "pickup" : "dropoff"} location, then fill in the package details.`}
+      />
+
       <div className="grid lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 p-3">
           <LiveMap

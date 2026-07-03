@@ -17,7 +17,7 @@ export function Topbar() {
   });
 
   return (
-    <header className="sticky top-0 z-30 h-14 border-b border-border bg-background/80 backdrop-blur flex items-center px-3 md:px-5 gap-3">
+    <header className="sticky top-0 z-30 h-14 border-b border-border/60 bg-background/70 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 flex items-center px-3 md:px-5 gap-3">
       <Button variant="ghost" size="icon" className="md:hidden" onClick={toggleSidebar}>
         <Menu className="h-5 w-5" />
       </Button>

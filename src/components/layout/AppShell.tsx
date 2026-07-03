@@ -5,6 +5,7 @@ import { Topbar } from "./Topbar";
 import { useAuthStore } from "@/store/auth";
 import { useRealtimeBridge } from "@/hooks/useRealtimeBridge";
 import { useThemeEffect } from "@/hooks/useThemeEffect";
+import { AmbientBackground } from "@/components/brand/AmbientBackground";
 import type { Role } from "@/types";
 
 export function AppShell({
@@ -37,7 +38,8 @@ export function AppShell({
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex bg-background text-foreground">
+    <div className="relative min-h-screen flex bg-background text-foreground">
+      <AmbientBackground intensity="soft" />
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar />
