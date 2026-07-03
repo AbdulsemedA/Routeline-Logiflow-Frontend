@@ -25,12 +25,14 @@ class RealSocket {
     }
 
     this.ws.onopen = () => {
+      console.log("[WebSocket] Connection established to", WS_URL);
       this.connected = true;
     };
 
     this.ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data);
+        console.log("[WebSocket] Received:", msg);
         const { event: eventName, data } = msg;
         if (eventName && this.handlers.has(eventName)) {
           this.handlers.get(eventName)!.forEach((h) => h(data));
@@ -41,6 +43,7 @@ class RealSocket {
     };
 
     this.ws.onclose = () => {
+      console.log("[WebSocket] Connection closed. Scheduling reconnect...");
       this.connected = false;
       this.scheduleReconnect();
     };

@@ -19,6 +19,7 @@ export function useRealtimeBridge() {
     });
 
     const offMove = socket.on("driver:move", ({ driverId, location }) => {
+      console.log("[useRealtimeBridge] driver:move event received", driverId, location);
       setOne(driverId, location);
     });
     const offStatus = socket.on("delivery:status", () => {
@@ -35,7 +36,7 @@ export function useRealtimeBridge() {
       offMove();
       offStatus();
       offAssign();
-      socket.destroy();
+      // We do NOT call socket.destroy() here because 'socket' is a global singleton
     };
   }, [setOne, setMany, qc]);
 }
