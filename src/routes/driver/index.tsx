@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
+import { PageHeader } from "@/components/layout/PageHeader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { deliveriesApi, driversApi } from "@/lib/api";
 import { useMemo, useState } from "react";
@@ -76,42 +77,43 @@ function Inner() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight flex items-center gap-2">
+      <PageHeader
+        eyebrow="Driver console"
+        title={
+          <>
             Good shift, {user?.name?.split(" ")[0] ?? "Driver"}
             {me && <DriverStatusBadge status={me.status} />}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {current ? "Your current delivery is below." : "No active delivery."}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 rounded-lg border border-border p-0.5">
-            {(["active", "idle", "offline"] as DriverStatus[]).map((s) => (
-              <Button
-                key={s}
-                size="sm"
-                variant={me?.status === s ? "default" : "ghost"}
-                disabled={updateDriverStatus.isPending}
-                onClick={() => updateDriverStatus.mutate(s)}
-                className="h-7 px-3 text-xs capitalize"
-              >
-                {s}
-              </Button>
-            ))}
-          </div>
-          <div className="h-6 w-px bg-border" />
-          <label className="flex items-center gap-2 text-sm">
-            <Switch
-              checked={liveOn}
-              onCheckedChange={setLiveOn}
-              disabled={me?.status === "offline"}
-            />
-            Share live location
-          </label>
-        </div>
-      </div>
+          </>
+        }
+        description={current ? "Your current delivery is below." : "No active delivery — new assignments will appear here automatically."}
+        actions={
+          <>
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-card/60 backdrop-blur p-0.5">
+              {(["active", "idle", "offline"] as DriverStatus[]).map((s) => (
+                <Button
+                  key={s}
+                  size="sm"
+                  variant={me?.status === s ? "default" : "ghost"}
+                  disabled={updateDriverStatus.isPending}
+                  onClick={() => updateDriverStatus.mutate(s)}
+                  className="h-7 px-3 text-xs capitalize"
+                >
+                  {s}
+                </Button>
+              ))}
+            </div>
+            <label className="flex items-center gap-2 text-sm rounded-lg border border-border bg-card/60 backdrop-blur px-3 h-8">
+              <Switch
+                checked={liveOn}
+                onCheckedChange={setLiveOn}
+                disabled={me?.status === "offline"}
+              />
+              <span className="text-xs">Share live location</span>
+            </label>
+          </>
+        }
+      />
+
 
       {current ? (
         <div className="grid lg:grid-cols-3 gap-4">
