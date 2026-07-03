@@ -10,7 +10,7 @@ import { format } from "date-fns";
 
 export const Route = createFileRoute("/deliveries/$id")({
   component: () => (
-    <AppShell>
+    <AppShell requireRole={["customer", "admin", "driver"]}>
       <Inner />
     </AppShell>
   ),
