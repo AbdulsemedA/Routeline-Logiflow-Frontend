@@ -25,7 +25,34 @@ export const Route = createFileRoute("/driver/")({
 function Inner() {
   const qc = useQueryClient();
   const user = useAuthStore((s) => s.user);
-  const [liveOn, setLiveOn] = useState(true);
+  const [liveOn, setLiveOnState] = useState(() => {
+    return localStorage.getItem("driverLiveOn") !== "false";
+  });
+
+  const setLiveOn = (val: boolean) => {
+    if (val) {
+      if (!navigator.geolocation) {
+        toast.error("Geolocation is not supported by your browser");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        () => {
+          localStorage.setItem("driverLiveOn", "true");
+          setLiveOnState(true);
+        },
+        (err) => {
+          console.warn("Location permission denied", err);
+          toast.error("Location permission denied. Please allow location access.");
+          localStorage.setItem("driverLiveOn", "false");
+          setLiveOnState(false);
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      localStorage.setItem("driverLiveOn", "false");
+      setLiveOnState(false);
+    }
+  };
 
   const { data: drivers = [] } = useQuery({
     queryKey: ["drivers"],
