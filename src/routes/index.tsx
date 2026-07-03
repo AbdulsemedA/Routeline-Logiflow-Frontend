@@ -255,7 +255,7 @@ function Hero({ hasUser, dashboardHref }: { hasUser: boolean; dashboardHref: str
             <span className="h-2.5 w-2.5 rounded-full bg-destructive/70" />
             <span className="h-2.5 w-2.5 rounded-full bg-chart-4" />
             <span className="h-2.5 w-2.5 rounded-full bg-chart-2" />
-            <span className="ml-3 text-[11px] text-muted-foreground font-mono">app.routeline.io/admin</span>
+            <span className="ml-3 text-[11px] text-muted-foreground font-mono">app.routeline.io/dashboard</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4">
             <div className="md:col-span-2 h-64 md:h-80 rounded-lg border border-border relative overflow-hidden"
@@ -370,7 +370,7 @@ function Features() {
     { icon: Trophy, title: "Driver ranking", desc: "Automatic performance scoring based on ETA accuracy, completion rate, and customer feedback." },
     { icon: BarChart3, title: "Operational analytics", desc: "Volume, latency, demand heatmaps, and cost per delivery — all in one dashboard." },
     { icon: Radio, title: "Realtime tracking", desc: "Customers get a live tracking link. No refresh, no email chains, no surprises." },
-    { icon: ShieldCheck, title: "Role-based access", desc: "Admins, drivers, and customers see exactly what they need. Nothing more, nothing less." },
+    { icon: ShieldCheck, title: "Role-based access", desc: "Drivers and customers see exactly what they need. Nothing more, nothing less." },
   ];
   return (
     <section id="features" className="mx-auto max-w-7xl px-4 md:px-6 py-24">
@@ -534,14 +534,6 @@ function ProductPreview() {
 
 function Roles() {
   const roles = [
-    {
-      icon: Users,
-      title: "For Admins",
-      desc: "Command the entire fleet. Assign, monitor, and analyze.",
-      bullets: ["Live map & dispatch", "Fleet management", "Analytics & heatmaps"],
-      cta: "Open admin",
-      to: "/login",
-    },
     {
       icon: Truck,
       title: "For Drivers",

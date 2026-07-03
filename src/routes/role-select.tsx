@@ -15,13 +15,6 @@ export const Route = createFileRoute("/role-select")({
 
 const ROLES: { role: Role; title: string; desc: string; icon: any; to: string }[] = [
   {
-    role: "admin",
-    title: "Admin / Dispatcher",
-    desc: "Live map, fleet ops, smart driver assignment and analytics.",
-    icon: LayoutDashboard,
-    to: "/admin",
-  },
-  {
     role: "driver",
     title: "Driver",
     desc: "Your active delivery, route, and history in one place.",

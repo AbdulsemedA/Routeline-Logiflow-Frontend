@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/store/auth";
 import { authApi } from "@/lib/api";
-import { Radar } from "lucide-react";
+import { Radar, Check } from "lucide-react";
 import { useThemeEffect } from "@/hooks/useThemeEffect";
 
 export const Route = createFileRoute("/register")({
@@ -32,15 +32,15 @@ function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
     try {
-      const result = await authApi.register(name, email, password);
-      login(result.user, result.accessToken, result.refreshToken);
-      navigate({ to: "/role-select" });
+      await authApi.register(name, email, password);
+      setSuccess(true);
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Registration failed");
     } finally {
@@ -90,6 +90,20 @@ function RegisterPage() {
             <CardDescription>Start dispatching in under a minute.</CardDescription>
           </CardHeader>
           <CardContent>
+            {success ? (
+              <div className="text-center space-y-4 py-6">
+                <div className="mx-auto h-12 w-12 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
+                  <Check className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Check your email</h3>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    We've sent a verification link to <span className="font-medium text-foreground">{email}</span>. 
+                    Please click it to activate your account.
+                  </p>
+                </div>
+              </div>
+            ) : (
             <form onSubmit={submit} className="space-y-4">
               {error && (
                 <p className="text-sm text-destructive">{error}</p>
@@ -116,6 +130,7 @@ function RegisterPage() {
                 </Link>
               </p>
             </form>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -39,7 +39,15 @@ function LoginPage() {
     try {
       const result = await authApi.login(username, password);
       login(result.user, result.accessToken, result.refreshToken);
-      navigate({ to: "/role-select" });
+      if (result.user.role === "unassigned") {
+        navigate({ to: "/role-select" });
+      } else if (result.user.role === "admin") {
+        navigate({ to: "/admin" });
+      } else if (result.user.role === "driver") {
+        navigate({ to: "/driver" });
+      } else {
+        navigate({ to: "/customer/new" });
+      }
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Login failed");
     } finally {

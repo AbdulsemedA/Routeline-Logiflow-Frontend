@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as RoleSelectRouteImport } from './routes/role-select'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
@@ -23,6 +24,11 @@ import { Route as AdminFleetRouteImport } from './routes/admin/fleet'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin/analytics'
 import { Route as CustomerTrackingIdRouteImport } from './routes/customer/tracking.$id'
 
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RoleSelectRoute = RoleSelectRouteImport.update({
   id: '/role-select',
   path: '/role-select',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/role-select': typeof RoleSelectRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/fleet': typeof AdminFleetRoute
   '/customer/new': typeof CustomerNewRoute
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/role-select': typeof RoleSelectRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/fleet': typeof AdminFleetRoute
   '/customer/new': typeof CustomerNewRoute
@@ -125,6 +133,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/role-select': typeof RoleSelectRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/fleet': typeof AdminFleetRoute
   '/customer/new': typeof CustomerNewRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/role-select'
+    | '/verify-email'
     | '/admin/analytics'
     | '/admin/fleet'
     | '/customer/new'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/role-select'
+    | '/verify-email'
     | '/admin/analytics'
     | '/admin/fleet'
     | '/customer/new'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/role-select'
+    | '/verify-email'
     | '/admin/analytics'
     | '/admin/fleet'
     | '/customer/new'
@@ -188,6 +200,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   RoleSelectRoute: typeof RoleSelectRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminFleetRoute: typeof AdminFleetRoute
   CustomerNewRoute: typeof CustomerNewRoute
@@ -201,6 +214,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/role-select': {
       id: '/role-select'
       path: '/role-select'
@@ -300,6 +320,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   RoleSelectRoute: RoleSelectRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminFleetRoute: AdminFleetRoute,
   CustomerNewRoute: CustomerNewRoute,
