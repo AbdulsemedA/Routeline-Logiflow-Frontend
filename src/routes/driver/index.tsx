@@ -3,7 +3,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { deliveriesApi, driversApi } from "@/lib/api";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { LiveMap } from "@/components/map/LiveMap";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,24 @@ function Inner() {
       toast.success("Status updated");
     },
   });
+
+  useEffect(() => {
+    if (!liveOn || !me || me.status === "offline" || !navigator.geolocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        // Broadcast location to backend without awaiting to prevent blocking
+        driversApi.updateLocation(latitude, longitude).catch(() => {});
+      },
+      (err) => {
+        console.warn("Geolocation tracking error", err);
+      },
+      { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [liveOn, me?.status]);
 
   return (
     <div className="p-4 md:p-6 space-y-4">
