@@ -123,19 +123,21 @@ function LeafletMap({
     for (const drv of visibleDrivers) {
       existingIds.add(drv.id);
       const pos = positions[drv.id] ?? drv.currentLocation;
+      const tooltipContent = driverTooltipHtml(drv, pos);
       const existing = driverMarkers.current.get(drv.id);
       if (existing) {
         existing.setLatLng([pos.lat, pos.lng]);
+        existing.setTooltipContent(tooltipContent);
       } else {
         const icon = L.divIcon({
           className: "",
           html: driverIconHtml(drv.status),
-          iconSize: [22, 22],
-          iconAnchor: [11, 11],
+          iconSize: [36, 36],
+          iconAnchor: [18, 18],
         });
         const m = L.marker([pos.lat, pos.lng], { icon }).bindTooltip(
-          `<strong>${escapeHtml(drv.name)}</strong><br/>${drv.vehicle.type.toUpperCase()} · ${escapeHtml(drv.vehicle.plate)}`,
-          { direction: "top", offset: [0, -8] },
+          tooltipContent,
+          { direction: "top", offset: [0, -14] },
         );
         m.addTo(layer);
         driverMarkers.current.set(drv.id, m);
@@ -225,12 +227,21 @@ function LeafletMap({
 function driverIconHtml(status: "active" | "idle" | "offline") {
   const color =
     status === "active" ? "#22c55e" : status === "idle" ? "#eab308" : "#6b7280";
+  const pulseClass = status !== "offline" ? "driver-pulse-ring" : "";
   return `
-    <div style="position:relative;width:22px;height:22px;">
-      <div style="position:absolute;inset:-6px;border-radius:9999px;background:${color};opacity:0.18;"></div>
-      <div style="position:absolute;inset:0;border-radius:9999px;background:${color};border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.4);"></div>
+    <div style="position:relative;width:36px;height:36px;">
+      <div class="${pulseClass}" style="position:absolute;inset:-8px;border-radius:9999px;background:${color};opacity:0.15;"></div>
+      <div style="position:absolute;inset:0;border-radius:9999px;background:${color};border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="18" height="18">
+          <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+        </svg>
+      </div>
     </div>
   `;
+}
+
+function driverTooltipHtml(drv: { name: string; vehicle: { type: string; plate: string } }, pos: { lat: number; lng: number }) {
+  return `<strong>${escapeHtml(drv.name)}</strong><br/>${drv.vehicle.type.toUpperCase()} · ${escapeHtml(drv.vehicle.plate)}<br/><span style="font-size:11px;color:#888;">📍 ${Number(pos.lat).toFixed(4)}, ${Number(pos.lng).toFixed(4)}</span>`;
 }
 
 function escapeHtml(s: string) {
