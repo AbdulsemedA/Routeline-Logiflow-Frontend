@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuthStore } from "@/store/auth";
 import { authApi } from "@/lib/api";
-import { Check, Mail } from "lucide-react";
 import { AuthLayout, GradientText } from "@/components/brand/AuthLayout";
 
 export const Route = createFileRoute("/register")({
@@ -30,7 +29,6 @@ function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,7 +36,12 @@ function RegisterPage() {
     setError("");
     try {
       await authApi.register(name, email, password);
-      setSuccess(true);
+      const result = await authApi.login(name, password);
+      login(result.user, result.accessToken, result.refreshToken);
+      if (result.user.role === "unassigned") navigate({ to: "/role-select" });
+      else if (result.user.role === "admin") navigate({ to: "/admin" });
+      else if (result.user.role === "driver") navigate({ to: "/driver" });
+      else navigate({ to: "/customer/new" });
     } catch (err: any) {
       setError(err?.response?.data?.detail || "Registration failed");
     } finally {
@@ -67,29 +70,7 @@ function RegisterPage() {
           <CardDescription>Start dispatching in under a minute.</CardDescription>
         </CardHeader>
         <CardContent>
-          {success ? (
-            <div className="text-center space-y-4 py-6">
-              <div className="relative mx-auto h-14 w-14">
-                <div className="absolute inset-0 rounded-full bg-emerald-500/20 blur-lg" />
-                <div className="relative h-14 w-14 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center border border-emerald-500/30">
-                  <Mail className="h-6 w-6" />
-                </div>
-              </div>
-              <div>
-                <h3 className="font-semibold text-lg">Check your email</h3>
-                <p className="text-sm text-muted-foreground mt-2">
-                  We've sent a verification link to{" "}
-                  <span className="font-medium text-foreground">{email}</span>.
-                  Click it to activate your account.
-                </p>
-              </div>
-              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-2">
-                <Check className="h-3.5 w-3.5 text-emerald-500" />
-                Didn't receive it? Check your spam folder.
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={submit} className="space-y-4">
+          <form onSubmit={submit} className="space-y-4">
               {error && (
                 <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
                   {error}
@@ -117,7 +98,6 @@ function RegisterPage() {
                 </Link>
               </p>
             </form>
-          )}
         </CardContent>
       </Card>
     </AuthLayout>

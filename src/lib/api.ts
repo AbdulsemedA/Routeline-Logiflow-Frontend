@@ -57,22 +57,10 @@ export const authApi = {
       refreshToken: data.refresh,
     };
   },
-  async verifyEmail(uidb64: string, token: string) {
-    const { data } = await http.post("/auth/verify-email", { uidb64, token });
-    return {
-      user: {
-        id: data.user.id,
-        name: data.user.username,
-        email: data.user.email,
-        role: data.user.role as "admin" | "driver" | "customer" | "unassigned",
-      },
-      accessToken: data.access,
-      refreshToken: data.refresh,
-    };
-  },
+
   async register(name: string, email: string, password: string) {
     await http.post("/auth/register", { username: name, email, password });
-    // Note: Do not automatically login after registration as the user needs to verify their email
+
   },
 };
 
