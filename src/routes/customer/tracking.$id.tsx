@@ -5,6 +5,7 @@ import { deliveriesApi, driversApi } from "@/lib/api";
 import { LiveMap } from "@/components/map/LiveMap";
 import { Card } from "@/components/ui/card";
 import { DeliveryStatusBadge } from "@/components/dashboard/StatusBadge";
+import { LiveTrackingBadge } from "@/components/dashboard/LiveTrackingBadge";
 import { formatDistance } from "@/lib/geo";
 
 export const Route = createFileRoute("/customer/tracking/$id")({
@@ -22,12 +23,12 @@ function Inner() {
     queryFn: () => deliveriesApi.get(id),
     refetchInterval: 4000,
   });
-  const { data: drivers = [] } = useQuery({
-    queryKey: ["drivers"],
-    queryFn: () => driversApi.list(),
+  const { data: driver } = useQuery({
+    queryKey: ["drivers", delivery?.assignedDriverId],
+    queryFn: () => driversApi.get(delivery!.assignedDriverId!),
+    enabled: !!delivery?.assignedDriverId,
     refetchInterval: 5000,
   });
-  const driver = drivers.find((d) => d.id === delivery?.assignedDriverId);
 
   if (!delivery) return <div className="p-6 text-sm text-muted-foreground">Loading…</div>;
 
@@ -44,6 +45,10 @@ function Inner() {
       </div>
       <div className="grid lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 p-3">
+          <div className="flex items-center justify-between mb-2 px-1">
+            <div className="text-sm font-medium">Driver tracking</div>
+            <LiveTrackingBadge driverId={delivery.assignedDriverId ?? undefined} />
+          </div>
           <LiveMap
             drivers={driver ? [driver] : []}
             deliveries={[delivery]}

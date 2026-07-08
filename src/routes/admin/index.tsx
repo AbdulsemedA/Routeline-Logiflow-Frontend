@@ -68,8 +68,8 @@ function DashboardInner() {
         .slice()
         .sort(
           (a, b) =>
-            +new Date(b.events[b.events.length - 1]?.timestamp ?? b.createdAt) -
-            +new Date(a.events[a.events.length - 1]?.timestamp ?? a.createdAt),
+            +new Date(b.events?.[b.events.length - 1]?.timestamp ?? b.createdAt) -
+            +new Date(a.events?.[a.events.length - 1]?.timestamp ?? a.createdAt),
         )
         .slice(0, 6),
     [deliveries],
@@ -132,7 +132,7 @@ function DashboardInner() {
               <Legend color="#ef4444" label="Dropoff" />
             </div>
           </div>
-          <LiveMap drivers={drivers} deliveries={deliveries} height={520} />
+          <LiveMap drivers={drivers} deliveries={deliveries} height={520} autoFitBounds={false} />
         </Card>
 
         <Card className="p-4 flex flex-col min-h-0">
@@ -208,7 +208,7 @@ function DashboardInner() {
         </div>
         <div className="divide-y divide-border">
           {recent.map((d) => {
-            const ev = d.events[d.events.length - 1];
+            const ev = d.events?.[d.events.length - 1];
             return (
               <Link
                 key={d.id}

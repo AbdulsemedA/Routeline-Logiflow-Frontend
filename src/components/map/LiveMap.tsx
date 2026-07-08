@@ -14,6 +14,7 @@ interface Props {
   pins?: { id: string; location: Location; color?: string; label?: string }[];
   height?: number | string;
   className?: string;
+  autoFitBounds?: boolean;
 }
 
 const TILE_LIGHT =
@@ -57,6 +58,7 @@ function LeafletMap({
   pins = [],
   height = 480,
   className = "",
+  autoFitBounds = true,
 }: Props & { L: typeof LeafletNS }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<LeafletNS.Map | null>(null);
@@ -75,8 +77,8 @@ function LeafletMap({
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const map = L.map(containerRef.current, {
-      center: [CITY_CENTER.lat, CITY_CENTER.lng],
-      zoom: 12,
+      center: [39.8283, -98.5795],
+      zoom: 4,
       zoomControl: true,
       attributionControl: false,
     });
@@ -122,22 +124,33 @@ function LeafletMap({
     const existingIds = new Set<string>();
     for (const drv of visibleDrivers) {
       existingIds.add(drv.id);
+      
       const pos = positions[drv.id] ?? drv.currentLocation;
+      
+      // Compute a deterministic pseudo-random offset based on ID to separate overlapping points
+      const hash = String(drv.id).split("").reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0);
+      const jitLat = (Math.abs(hash % 100) / 100 - 0.5) * 0.004;
+      const jitLng = (Math.abs((hash * 7) % 100) / 100 - 0.5) * 0.004;
+      
+      const realLat = pos.lat + jitLat;
+      const realLng = pos.lng + jitLng;
+      
       const tooltipContent = driverTooltipHtml(drv, pos);
       const existing = driverMarkers.current.get(drv.id);
+      
       if (existing) {
-        existing.setLatLng([pos.lat, pos.lng]);
+        existing.setLatLng([realLat, realLng]);
         existing.setTooltipContent(tooltipContent);
       } else {
         const icon = L.divIcon({
           className: "",
           html: driverIconHtml(drv.status),
-          iconSize: [36, 36],
-          iconAnchor: [18, 18],
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
         });
-        const m = L.marker([pos.lat, pos.lng], { icon }).bindTooltip(
+        const m = L.marker([realLat, realLng], { icon }).bindTooltip(
           tooltipContent,
-          { direction: "top", offset: [0, -14] },
+          { direction: "top", offset: [0, -10] },
         );
         m.addTo(layer);
         driverMarkers.current.set(drv.id, m);
@@ -190,13 +203,32 @@ function LeafletMap({
     }
 
     if (focusMode && focusDelivery && mapRef.current) {
-      const bounds = L.latLngBounds([
+      const boundsPoints: [number, number][] = [
         [focusDelivery.pickup.lat, focusDelivery.pickup.lng],
         [focusDelivery.dropoff.lat, focusDelivery.dropoff.lng],
-      ]);
+      ];
+
+      // Expand bounds to include real-time driver tracking location
+      if (focusDelivery.assignedDriverId) {
+        const streamPos = positions[focusDelivery.assignedDriverId];
+        if (streamPos) boundsPoints.push([streamPos.lat, streamPos.lng]);
+        else {
+           const d = drivers.find(d => d.id === focusDelivery.assignedDriverId);
+           if (d) boundsPoints.push([d.currentLocation.lat, d.currentLocation.lng]);
+        }
+      }
+
+      const bounds = L.latLngBounds(boundsPoints);
       mapRef.current.fitBounds(bounds, { padding: [60, 60] });
+    } else if (!focusDelivery && drivers.length > 0 && mapRef.current && autoFitBounds) {
+      // For standalone driver page, bound to my own location
+      const boundsPoints = drivers.map(d => {
+         const p = positions[d.id] ?? d.currentLocation;
+         return [p.lat, p.lng] as [number, number];
+      });
+      mapRef.current.fitBounds(L.latLngBounds(boundsPoints), { maxZoom: 15, padding: [60, 60] });
     }
-  }, [deliveries, focusDelivery, focusMode, L]);
+  }, [deliveries, focusDelivery, focusMode, drivers, positions, L]);
 
   useEffect(() => {
     const layer = pinLayerRef.current;
@@ -229,10 +261,10 @@ function driverIconHtml(status: "active" | "idle" | "offline") {
     status === "active" ? "#22c55e" : status === "idle" ? "#eab308" : "#6b7280";
   const pulseClass = status !== "offline" ? "driver-pulse-ring" : "";
   return `
-    <div style="position:relative;width:36px;height:36px;">
-      <div class="${pulseClass}" style="position:absolute;inset:-8px;border-radius:9999px;background:${color};opacity:0.15;"></div>
-      <div style="position:absolute;inset:0;border-radius:9999px;background:${color};border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="18" height="18">
+    <div style="position:relative;width:24px;height:24px;">
+      <div class="${pulseClass}" style="position:absolute;inset:-6px;border-radius:9999px;background:${color};opacity:0.15;"></div>
+      <div style="position:absolute;inset:0;border-radius:9999px;background:${color};border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="white" width="12" height="12">
           <path d="M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
         </svg>
       </div>

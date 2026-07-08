@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { DeliveryStatusBadge, DriverStatusBadge } from "@/components/dashboard/StatusBadge";
+import { LiveTrackingBadge } from "@/components/dashboard/LiveTrackingBadge";
 import { formatDistance } from "@/lib/geo";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth";
@@ -163,6 +164,10 @@ function Inner() {
       {current ? (
         <div className="grid lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2 p-3">
+            <div className="flex items-center justify-between mb-2 px-1">
+              <div className="text-sm font-medium">My route</div>
+              <LiveTrackingBadge driverId={me?.id} />
+            </div>
             <LiveMap
               drivers={me ? [me] : []}
               deliveries={[current]}
