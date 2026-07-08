@@ -17,10 +17,8 @@ interface Props {
   autoFitBounds?: boolean;
 }
 
-const TILE_LIGHT =
-  "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
-const TILE_DARK =
-  "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+const TILE_LIGHT = "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+const TILE_DARK = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
 
 export function LiveMap(props: Props) {
   const [L, setL] = useState<typeof LeafletNS | null>(null);
@@ -113,7 +111,7 @@ function LeafletMap({
 
   const visibleDrivers = useMemo(() => {
     if (focusMode && focusDelivery?.assignedDriverId) {
-      return drivers.filter((d) => d.id === focusDelivery.assignedDriverId);
+      return drivers.filter((d) => String(d.id) === String(focusDelivery.assignedDriverId));
     }
     return drivers.filter((d) => d.status !== "offline");
   }, [drivers, focusMode, focusDelivery]);
@@ -124,20 +122,25 @@ function LeafletMap({
     const existingIds = new Set<string>();
     for (const drv of visibleDrivers) {
       existingIds.add(drv.id);
-      
+
       const pos = positions[drv.id] ?? drv.currentLocation;
-      
+
       // Compute a deterministic pseudo-random offset based on ID to separate overlapping points
-      const hash = String(drv.id).split("").reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a }, 0);
+      const hash = String(drv.id)
+        .split("")
+        .reduce((a, b) => {
+          a = (a << 5) - a + b.charCodeAt(0);
+          return a & a;
+        }, 0);
       const jitLat = (Math.abs(hash % 100) / 100 - 0.5) * 0.004;
       const jitLng = (Math.abs((hash * 7) % 100) / 100 - 0.5) * 0.004;
-      
+
       const realLat = pos.lat + jitLat;
       const realLng = pos.lng + jitLng;
-      
+
       const tooltipContent = driverTooltipHtml(drv, pos);
       const existing = driverMarkers.current.get(drv.id);
-      
+
       if (existing) {
         existing.setLatLng([realLat, realLng]);
         existing.setTooltipContent(tooltipContent);
@@ -148,10 +151,10 @@ function LeafletMap({
           iconSize: [24, 24],
           iconAnchor: [12, 12],
         });
-        const m = L.marker([realLat, realLng], { icon }).bindTooltip(
-          tooltipContent,
-          { direction: "top", offset: [0, -10] },
-        );
+        const m = L.marker([realLat, realLng], { icon }).bindTooltip(tooltipContent, {
+          direction: "top",
+          offset: [0, -10],
+        });
         m.addTo(layer);
         driverMarkers.current.set(drv.id, m);
       }
@@ -210,11 +213,13 @@ function LeafletMap({
 
       // Expand bounds to include real-time driver tracking location
       if (focusDelivery.assignedDriverId) {
-        const streamPos = positions[focusDelivery.assignedDriverId];
+        const streamPos =
+          positions[focusDelivery.assignedDriverId] ??
+          positions[String(focusDelivery.assignedDriverId)];
         if (streamPos) boundsPoints.push([streamPos.lat, streamPos.lng]);
         else {
-           const d = drivers.find(d => d.id === focusDelivery.assignedDriverId);
-           if (d) boundsPoints.push([d.currentLocation.lat, d.currentLocation.lng]);
+          const d = drivers.find((d) => String(d.id) === String(focusDelivery.assignedDriverId));
+          if (d) boundsPoints.push([d.currentLocation.lat, d.currentLocation.lng]);
         }
       }
 
@@ -222,9 +227,9 @@ function LeafletMap({
       mapRef.current.fitBounds(bounds, { padding: [60, 60] });
     } else if (!focusDelivery && drivers.length > 0 && mapRef.current && autoFitBounds) {
       // For standalone driver page, bound to my own location
-      const boundsPoints = drivers.map(d => {
-         const p = positions[d.id] ?? d.currentLocation;
-         return [p.lat, p.lng] as [number, number];
+      const boundsPoints = drivers.map((d) => {
+        const p = positions[d.id] ?? d.currentLocation;
+        return [p.lat, p.lng] as [number, number];
       });
       mapRef.current.fitBounds(L.latLngBounds(boundsPoints), { maxZoom: 15, padding: [60, 60] });
     }
@@ -257,8 +262,7 @@ function LeafletMap({
 }
 
 function driverIconHtml(status: "active" | "idle" | "offline") {
-  const color =
-    status === "active" ? "#22c55e" : status === "idle" ? "#eab308" : "#6b7280";
+  const color = status === "active" ? "#22c55e" : status === "idle" ? "#eab308" : "#6b7280";
   const pulseClass = status !== "offline" ? "driver-pulse-ring" : "";
   return `
     <div style="position:relative;width:24px;height:24px;">
@@ -272,12 +276,16 @@ function driverIconHtml(status: "active" | "idle" | "offline") {
   `;
 }
 
-function driverTooltipHtml(drv: { name: string; vehicle: { type: string; plate: string } }, pos: { lat: number; lng: number }) {
+function driverTooltipHtml(
+  drv: { name: string; vehicle: { type: string; plate: string } },
+  pos: { lat: number; lng: number },
+) {
   return `<strong>${escapeHtml(drv.name)}</strong><br/>${drv.vehicle.type.toUpperCase()} · ${escapeHtml(drv.vehicle.plate)}<br/><span style="font-size:11px;color:#888;">📍 ${Number(pos.lat).toFixed(4)}, ${Number(pos.lng).toFixed(4)}</span>`;
 }
 
 function escapeHtml(s: string) {
-  return s.replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!,
   );
 }
